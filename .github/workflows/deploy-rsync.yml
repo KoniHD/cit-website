@@ -1,0 +1,119 @@
+name: Deploy via rsync over SSH
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "index.html"
+      - "profile.yml"
+      - "robots.txt"
+      - "site.webmanifest"
+      - "sitemap.xml"
+      - "photo.webp"
+      - "icons/**"
+      - "scripts/**"
+      - "styles/**"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: deployment
+      url: https://home.cit.tum.de/~zeko
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install exiftool
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libimage-exiftool-perl
+
+      - name: Strip image metadata before deploy
+        run: |
+          set -euo pipefail
+          find . -type f \( \
+            -iname "*.webp" -o \
+            -iname "*.png" -o \
+            -iname "*.jpg" -o \
+            -iname "*.jpeg" -o \
+            -iname "*.avif" -o \
+            -iname "*.gif" \
+          \) -not -path "./.git/*" -print0 | xargs -0 -r exiftool -overwrite_original -all=
+
+      - name: Start SSH agent and add private key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
+
+      - name: Pin and verify server host keys
+        run: |
+          mkdir -p ~/.ssh
+          chmod u=rwx,go= ~/.ssh
+
+          DEPLOY_HOST="lxhalle.in.tum.de"
+          DEPLOY_PORT="22"
+          EXPECTED_ED25519_FP="SHA256:dSj0mkyuOXEdpKGGJmXkvhDnvbjGmGCYQXA0pV8Pe4s"
+          EXPECTED_RSA_FP="SHA256:xJrFkhNs9pwibJFZZB5LvcrltWxfAIovk/UjKAXkIW4"
+
+          KEYSCAN_OUTPUT="$(ssh-keyscan -p "${DEPLOY_PORT}" -t ed25519,rsa "${DEPLOY_HOST}" 2>/dev/null)"
+          if [ -z "${KEYSCAN_OUTPUT}" ]; then
+            echo "Failed to retrieve host keys from ${DEPLOY_HOST}:${DEPLOY_PORT}" >&2
+            exit 1
+          fi
+
+          ED25519_LINE="$(printf '%s\n' "${KEYSCAN_OUTPUT}" | awk '$2 == "ssh-ed25519" { print; exit }')"
+          RSA_LINE="$(printf '%s\n' "${KEYSCAN_OUTPUT}" | awk '$2 == "ssh-rsa" { print; exit }')"
+
+          if [ -z "${ED25519_LINE}" ] || [ -z "${RSA_LINE}" ]; then
+            echo "Missing expected key types from ssh-keyscan output" >&2
+            exit 1
+          fi
+
+          ACTUAL_ED25519_FP="$(printf '%s\n' "${ED25519_LINE}" | ssh-keygen -lf - -E sha256 | awk '{print $2}')"
+          ACTUAL_RSA_FP="$(printf '%s\n' "${RSA_LINE}" | ssh-keygen -lf - -E sha256 | awk '{print $2}')"
+
+          if [ "${ACTUAL_ED25519_FP}" != "${EXPECTED_ED25519_FP}" ]; then
+            echo "ED25519 fingerprint mismatch: ${ACTUAL_ED25519_FP}" >&2
+            exit 1
+          fi
+
+          if [ "${ACTUAL_RSA_FP}" != "${EXPECTED_RSA_FP}" ]; then
+            echo "RSA fingerprint mismatch: ${ACTUAL_RSA_FP}" >&2
+            exit 1
+          fi
+
+          printf '%s\n%s\n' "${ED25519_LINE}" "${RSA_LINE}" > ~/.ssh/known_hosts
+          chmod u=rw,go=r ~/.ssh/known_hosts
+
+      - name: Sync files to server
+        env:
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          DEPLOY_HOST="lxhalle.in.tum.de"
+          RSYNC_SSH_PORT="22"
+          DEPLOY_PATH="./"
+
+          # Intentionally do not preserve perms/owner/group so server-side
+          # permission settings are not reset on each deployment.
+          rsync -rlztD --delete \
+            --exclude ".git/" \
+            --exclude ".github/" \
+            -e "ssh -p ${RSYNC_SSH_PORT} -o StrictHostKeyChecking=yes" \
+            ./ "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}"
+
+      - name: Print deployment URL
+        if: success()
+        env:
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          echo "Deployment successful: https://home.cit.tum.de/~${DEPLOY_USER}"
