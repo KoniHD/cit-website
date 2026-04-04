@@ -1,7 +1,8 @@
 User-agent: *
-Sitemap: https://home.cit.tum.de/~zeko/sitemap.xml
+Sitemap: https://home.cit.tum.de/~muster/sitemap.xml
 
-# Block AdsBots
+# Attempt to block known AI bots
+# For better coverage consider: https://knownagents.com
 User-agent: AdsBot-Google
 User-agent: Google AdsBot
 User-agent: Google Adsense

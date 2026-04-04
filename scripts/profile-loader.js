@@ -8,6 +8,16 @@ const setAttr = (id, attr, value) => {
     if (el) el.setAttribute(attr, value);
 };
 
+const resolveCitSiteUrl = (profile) => {
+    const citLogin = String(profile.citLogin || "").trim().replace(/^~+/, "");
+    if (citLogin) return `https://home.cit.tum.de/~${citLogin}/`;
+
+    const legacySiteUrl = String(profile.siteUrl || "").trim();
+    if (legacySiteUrl) return legacySiteUrl.replace(/\/?$/, "/");
+
+    return "";
+};
+
 const updateManifest = async (profile, fullName) => {
     const manifestLink = document.querySelector('link[rel="manifest"]');
     if (!manifestLink) return;
@@ -45,9 +55,10 @@ const updateManifest = async (profile, fullName) => {
 
 const applyProfile = (profile) => {
     const fullName = `${profile.firstName || ""} ${profile.lastName || ""}`.trim();
+    const siteUrl = resolveCitSiteUrl(profile);
     const contactMailto = `mailto:${profile.email}?subject=${encodeURIComponent("[CIT] ")}&body=${encodeURIComponent(`Hi ${profile.firstName},`)}`;
-    const shareMailto = `mailto:?subject=${encodeURIComponent(`${fullName}'s Profile`)}&body=${encodeURIComponent(`I would like to share the profile of ${fullName} with you. ${profile.siteUrl}`)}`;
-    const photoUrl = `${profile.siteUrl.replace(/\/?$/, "/")}photo.webp`;
+    const shareMailto = `mailto:?subject=${encodeURIComponent(`${fullName}'s Profile`)}&body=${encodeURIComponent(`I would like to share the profile of ${fullName} with you. ${siteUrl}`)}`;
+    const photoUrl = `${siteUrl}photo.webp`;
     const sharedTitle = `${fullName} - ${profile.role}`;
     const worksForName = profile.affiliationOrg
         ? (profile.affiliationOrg.includes("TUM") ? profile.affiliationOrg : `${profile.affiliationOrg}, TUM`)
@@ -58,16 +69,18 @@ const applyProfile = (profile) => {
     setAttr("og-description", "content", profile.description);
     setAttr("twitter-description", "content", profile.description);
     setAttr("meta-author", "content", fullName);
-    setAttr("canonical-url", "href", profile.siteUrl);
+    if (siteUrl) setAttr("canonical-url", "href", siteUrl);
 
     setAttr("og-title", "content", sharedTitle);
-    setAttr("og-url", "content", profile.siteUrl);
-    setAttr("og-image", "content", photoUrl);
+    if (siteUrl) {
+        setAttr("og-url", "content", siteUrl);
+        setAttr("og-image", "content", photoUrl);
+    }
     setAttr("profile-first-name", "content", profile.firstName);
     setAttr("profile-last-name", "content", profile.lastName);
 
     setAttr("twitter-title", "content", sharedTitle);
-    setAttr("twitter-image", "content", photoUrl);
+    if (siteUrl) setAttr("twitter-image", "content", photoUrl);
 
     setText("profile-name", fullName);
     setText("footer-name", fullName);
@@ -106,7 +119,7 @@ const applyProfile = (profile) => {
             "@context": "https://schema.org",
             "@type": "Person",
             name: fullName,
-            url: profile.siteUrl,
+            url: siteUrl,
             sameAs: profile.sameAs,
             affiliation: {
                 "@type": "CollegeOrUniversity",

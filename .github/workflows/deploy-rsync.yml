@@ -25,13 +25,16 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: deployment
-      url: https://home.cit.tum.de/~zeko
+      url: https://home.cit.tum.de/~<CIT-login>
     permissions:
       contents: read
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Sync robots.txt and sitemap.xml from profile.yml
+        run: node ./scripts/sync-seo-files.mjs
 
       - name: Install exiftool
         run: |
