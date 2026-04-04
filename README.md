@@ -105,3 +105,5 @@ To the maximum extent permitted by applicable law, this template is provided **"
 This limitation of liability explicitly includes use, misconfiguration, or abuse of the included GitHub Actions workflow, SSH keys, deployment scripts, and any related automation.
 
 Security improvements are always welcome! If you identify a weakness or have a hardening suggestion, please open an issue or pull request so it can be reviewed and improved for everyone.
+
+Original template by Konstantin Zeck.
