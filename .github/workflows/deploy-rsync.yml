@@ -21,11 +21,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
-    environment:
-      name: deployment
-      url: https://home.cit.tum.de/~<CIT-login>
     permissions:
       contents: read
 
@@ -33,25 +30,55 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Sync robots.txt and sitemap.xml from profile.yml
-        run: node ./scripts/sync-seo-files.mjs
+      - name: Build deploy artifact from profile.yml
+        run: node ./scripts/build-index.mjs --build-dir .deploy-build
 
-      - name: Install exiftool
+      - name: Ensure exiftool is available
         run: |
+          set -euo pipefail
+          if command -v exiftool >/dev/null 2>&1; then
+            echo "exiftool is already available"
+            exit 0
+          fi
+
           sudo apt-get update
           sudo apt-get install -y libimage-exiftool-perl
 
-      - name: Strip image metadata before deploy
+      - name: Strip image metadata in build artifact
         run: |
           set -euo pipefail
-          find . -type f \( \
+          find .deploy-build -type f \( \
             -iname "*.webp" -o \
             -iname "*.png" -o \
             -iname "*.jpg" -o \
             -iname "*.jpeg" -o \
             -iname "*.avif" -o \
             -iname "*.gif" \
-          \) -not -path "./.git/*" -print0 | xargs -0 -r exiftool -overwrite_original -all=
+          \) -print0 | xargs -0 -r exiftool -overwrite_original -all=
+
+      - name: Upload deploy artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-build
+          path: .deploy-build
+          include-hidden-files: true
+          if-no-files-found: error
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: deployment
+      url: https://home.cit.tum.de/~zeko
+    permissions:
+      contents: read
+
+    steps:
+      - name: Download deploy artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: deploy-build
+          path: .deploy-build
 
       - name: Start SSH agent and add private key
         uses: webfactory/ssh-agent@v0.9.0
@@ -109,10 +136,8 @@ jobs:
           # Intentionally do not preserve perms/owner/group so server-side
           # permission settings are not reset on each deployment.
           rsync -rlztD --delete \
-            --exclude ".git/" \
-            --exclude ".github/" \
             -e "ssh -p ${RSYNC_SSH_PORT} -o StrictHostKeyChecking=yes" \
-            ./ "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}"
+            .deploy-build/ "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}"
 
       - name: Print deployment URL
         if: success()

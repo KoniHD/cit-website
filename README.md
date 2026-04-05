@@ -19,7 +19,6 @@ That's why this template is meant to make profile publishing easier for CIT stud
 4. Ensure you set file permission correctly (see [CIT permission tree view](#cit-permission-setup-tree-view))
 5. *Optional:* Add SEO meta tags for site ownership verification to [`'index.html'`](index.html)
 6. *Optional*: Set up [Github Action Workflow](#optional-github-actions-deploy-setup) for automatic deployment
-7. *Optional*: [Adjust site.webmanifest data](#optional-edit-webmanifest-data)
 
 ## CIT Permission Setup (Tree View)
 
@@ -72,33 +71,6 @@ In [`'index.html'`](index.html) you can set meta tags to verify site ownership t
 
 *Note* that some engines might not work if they only allow top-level verification.
 
-### Add context information
-
-Also inside [`'index.html'`](index.html) you can add context about yourself. Simply edit:
-
-```html
-    <!-- Structured data: Person -->
-    <script id="person-ld-json" type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "Person",
-        "name": "",
-        "url": "",
-        "sameAs": [],
-    "affiliation": {
-      "@type": "CollegeOrUniversity",
-      "name": "Technical University of Munich",
-      "url": "https://www.tum.de"
-    },
-        "jobTitle": "",
-    "worksFor": {
-      "@type": "Organization",
-            "name": ""
-    },
-        "email": ""
-  }
-```
-
 ## *Optional* GitHub Actions Deploy Setup
 
 ### 1. Create a dedicated deploy key pair
@@ -142,18 +114,6 @@ In repo settings on GitHub:
 ### 4. Edit deployment workflow to point to your website
 
 At the top in [`'deploy-rsync.yml'`](.github/workflows/deploy-rsync.yml) replay 'CIT-login' with your credentials to point the workflow to your site upon successfull completion.
-
-## *Optional* Edit webmanifest data
-
-IN [`'site.webmanifest'`](site.webmanifest) you can also edit your correct credentials.
-
-```json
-{
-    "name": "Max Mustermann",
-    "short_name": "M. Mustermann",
-    "description": "Academic homepage of Max Mustermann.",
-    "start_url": "./",
-```
 
 
 # Disclaimer
