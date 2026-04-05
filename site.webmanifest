@@ -1,7 +1,7 @@
 {
     "name": "Max Mustermann",
     "short_name": "M. Mustermann",
-    "description": "Personal homepage of Max Mustermann.",
+    "description": "Academic homepage of Max Mustermann.",
     "start_url": "./",
     "scope": "./",
     "display": "standalone",

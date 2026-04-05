@@ -18,7 +18,8 @@ That's why this template is meant to make profile publishing easier for CIT stud
 3. Follow the instructions on the [wiki](https://wiki.ito.cit.tum.de/bin/view/CIT/ITO/Docs/Guides/Helpdesk/EigeneHomepage/) to make your site public.
 4. Ensure you set file permission correctly (see [CIT permission tree view](#cit-permission-setup-tree-view))
 5. *Optional:* Add SEO meta tags for site ownership verification to [`'index.html'`](index.html)
-6. *Optional*: Set up Github Action Workflow for automatic deployment
+6. *Optional*: Set up [Github Action Workflow](#optional-github-actions-deploy-setup) for automatic deployment
+7. *Optional*: [Adjust site.webmanifest data](#optional-edit-webmanifest-data)
 
 ## CIT Permission Setup (Tree View)
 
@@ -47,6 +48,56 @@ Make sure your files on lxhalle have the following minimum permissions:
 					`-- apple-touch-icon.webp    file: o+r
 ```
 
+## *Optional* Set SEO Meta tags
+
+In [`'index.html'`](index.html) you can set meta tags to verify site ownership to common search engines:
+
+```html
+    <!-- Search engine verification — uncomment each after obtaining your token -->
+    <!-- Google Search Console  → https://search.google.com/search-console -->
+    <!-- <meta name="google-site-verification" content="YOUR_TOKEN" /> -->
+    <!-- Bing Webmaster Tools   → https://www.bing.com/webmasters -->
+    <!-- <meta name="msvalidate.01" content="YOUR_TOKEN" /> -->
+    <!-- Yandex Webmaster       → https://webmaster.yandex.com DOESN'T WORK CURRENTLY-->
+    <!-- <meta name="yandex-verification" content="YOUR_TOKEN" /> -->
+    <!-- Baidu Webmaster        → https://ziyuan.baidu.com/site -->
+    <!-- <meta name="baidu-site-verification" content="YOUR_TOKEN" /> -->
+    <!-- Naver Search Advisor   → https://searchadvisor.naver.com -->
+    <!-- <meta name="naver-site-verification" content="YOUR_TOKEN" /> -->
+    <!-- Seznam Webmaster       → https://search.seznam.cz -->
+    <!-- <meta name="seznam-wmt" content="YOUR_TOKEN" /> -->
+    <!-- Pinterest              → https://developers.pinterest.com/tools/url-debugger -->
+    <!-- <meta name="p:domain_verify" content="YOUR_TOKEN" /> -->
+```
+
+*Note* that some engines might not work if they only allow top-level verification.
+
+### Add context information
+
+Also inside [`'index.html'`](index.html) you can add context about yourself. Simply edit:
+
+```html
+    <!-- Structured data: Person -->
+    <script id="person-ld-json" type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Person",
+        "name": "",
+        "url": "",
+        "sameAs": [],
+    "affiliation": {
+      "@type": "CollegeOrUniversity",
+      "name": "Technical University of Munich",
+      "url": "https://www.tum.de"
+    },
+        "jobTitle": "",
+    "worksFor": {
+      "@type": "Organization",
+            "name": ""
+    },
+        "email": ""
+  }
+```
 
 ## *Optional* GitHub Actions Deploy Setup
 
@@ -87,6 +138,22 @@ In repo settings on GitHub:
 1. Create environment `deployment`.
 2. Add environment secret `DEPLOY_SSH_KEY` with the full private key content.
 3. Add environment secret `DEPLOY_USER` with your CIT-login (for example `muster`).
+
+### 4. Edit deployment workflow to point to your website
+
+At the top in [`'deploy-rsync.yml'`](.github/workflows/deploy-rsync.yml) replay 'CIT-login' with your credentials to point the workflow to your site upon successfull completion.
+
+## *Optional* Edit webmanifest data
+
+IN [`'site.webmanifest'`](site.webmanifest) you can also edit your correct credentials.
+
+```json
+{
+    "name": "Max Mustermann",
+    "short_name": "M. Mustermann",
+    "description": "Academic homepage of Max Mustermann.",
+    "start_url": "./",
+```
 
 
 # Disclaimer
