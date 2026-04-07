@@ -31,7 +31,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build deploy artifact from profile.yml
-        run: node ./scripts/build-index.mjs --build-dir .deploy-build
+        run: node ./scripts/build-index.mjs --build-dir deploy-build
 
       - name: Ensure exiftool is available
         run: |
@@ -41,28 +41,42 @@ jobs:
             exit 0
           fi
 
-          sudo apt-get update
-          sudo apt-get install -y libimage-exiftool-perl
+          sudo apt-get install --yes libimage-exiftool-perl
 
       - name: Strip image metadata in build artifact
         run: |
           set -euo pipefail
-          find .deploy-build -type f \( \
+          find deploy-build -type f \( \
             -iname "*.webp" -o \
             -iname "*.png" -o \
             -iname "*.jpg" -o \
-            -iname "*.jpeg" -o \
-            -iname "*.avif" -o \
-            -iname "*.gif" \
+            -iname "*.jpeg" \
           \) -print0 | xargs -0 -r exiftool -overwrite_original -all=
 
       - name: Upload deploy artifact
         uses: actions/upload-artifact@v4
         with:
           name: deploy-build
-          path: .deploy-build
-          include-hidden-files: true
+          path: deploy-build
           if-no-files-found: error
+
+  report-build-status:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      DEPLOY_HOST: lxhalle.in.tum.de
+    if: always()
+    steps:
+      - name: Generate Deployment Summary
+        run: |
+          echo "### Deployment Report :rocket:" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "| :--- | :--- |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Target Host** | ${{ env.DEPLOY_HOST }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Result** | ${{ job.status }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **URL** | [View Site](https://home.cit.tum.de/~${{ secrets.DEPLOY_USER }}) |" >> $GITHUB_STEP_SUMMARY
 
   deploy:
     needs: build
@@ -70,6 +84,11 @@ jobs:
     environment:
       name: deployment
       url: https://home.cit.tum.de/~zeko
+    env:
+      DEPLOY_HOST: lxhalle.in.tum.de
+      DEPLOY_PORT: 22
+      DEPLOY_PATH: ./
+      SSH_ED25519_FP: "SHA256:dSj0mkyuOXEdpKGGJmXkvhDnvbjGmGCYQXA0pV8Pe4s"
     permissions:
       contents: read
 
@@ -78,7 +97,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: deploy-build
-          path: .deploy-build
+          path: deploy-build
 
       - name: Start SSH agent and add private key
         uses: webfactory/ssh-agent@v0.9.0
@@ -87,61 +106,47 @@ jobs:
 
       - name: Pin and verify server host keys
         run: |
-          mkdir -p ~/.ssh
-          chmod u=rwx,go= ~/.ssh
+          mkdir --parents --mode=u=rwx,go= ~/.ssh
 
-          DEPLOY_HOST="lxhalle.in.tum.de"
-          DEPLOY_PORT="22"
-          EXPECTED_ED25519_FP="SHA256:dSj0mkyuOXEdpKGGJmXkvhDnvbjGmGCYQXA0pV8Pe4s"
-          EXPECTED_RSA_FP="SHA256:xJrFkhNs9pwibJFZZB5LvcrltWxfAIovk/UjKAXkIW4"
-
-          KEYSCAN_OUTPUT="$(ssh-keyscan -p "${DEPLOY_PORT}" -t ed25519,rsa "${DEPLOY_HOST}" 2>/dev/null)"
+          KEYSCAN_OUTPUT="$(ssh-keyscan -p "${{ env.DEPLOY_PORT }}" -t ed25519 "${{ env.DEPLOY_HOST }}" 2>/dev/null)"
           if [ -z "${KEYSCAN_OUTPUT}" ]; then
-            echo "Failed to retrieve host keys from ${DEPLOY_HOST}:${DEPLOY_PORT}" >&2
+            echo "Failed to retrieve host keys from ${{ env.DEPLOY_HOST }}:${{ env.DEPLOY_PORT }}" >&2
             exit 1
           fi
 
           ED25519_LINE="$(printf '%s\n' "${KEYSCAN_OUTPUT}" | awk '$2 == "ssh-ed25519" { print; exit }')"
-          RSA_LINE="$(printf '%s\n' "${KEYSCAN_OUTPUT}" | awk '$2 == "ssh-rsa" { print; exit }')"
 
-          if [ -z "${ED25519_LINE}" ] || [ -z "${RSA_LINE}" ]; then
+          if [ -z "${ED25519_LINE}" ]; then
             echo "Missing expected key types from ssh-keyscan output" >&2
             exit 1
           fi
 
           ACTUAL_ED25519_FP="$(printf '%s\n' "${ED25519_LINE}" | ssh-keygen -lf - -E sha256 | awk '{print $2}')"
-          ACTUAL_RSA_FP="$(printf '%s\n' "${RSA_LINE}" | ssh-keygen -lf - -E sha256 | awk '{print $2}')"
 
-          if [ "${ACTUAL_ED25519_FP}" != "${EXPECTED_ED25519_FP}" ]; then
+          if [ "${ACTUAL_ED25519_FP}" != "${{ env.SSH_ED25519_FP }}" ]; then
             echo "ED25519 fingerprint mismatch: ${ACTUAL_ED25519_FP}" >&2
             exit 1
           fi
 
-          if [ "${ACTUAL_RSA_FP}" != "${EXPECTED_RSA_FP}" ]; then
-            echo "RSA fingerprint mismatch: ${ACTUAL_RSA_FP}" >&2
-            exit 1
-          fi
-
-          printf '%s\n%s\n' "${ED25519_LINE}" "${RSA_LINE}" > ~/.ssh/known_hosts
+          printf '%s\n' "${ED25519_LINE}" > ~/.ssh/known_hosts
           chmod u=rw,go=r ~/.ssh/known_hosts
 
       - name: Sync files to server
         env:
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
         run: |
-          DEPLOY_HOST="lxhalle.in.tum.de"
-          RSYNC_SSH_PORT="22"
-          DEPLOY_PATH="./"
 
           # Intentionally do not preserve perms/owner/group so server-side
           # permission settings are not reset on each deployment.
-          rsync -rlztD --delete \
-            -e "ssh -p ${RSYNC_SSH_PORT} -o StrictHostKeyChecking=yes" \
-            .deploy-build/ "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}"
+          # TODO Update KexAlgo once PQC algorithms are supported by the server!
+          rsync --recursive --compress --delete-during --times --quiet \
+                --no-perms --no-owner --no-group \
+            -e "ssh -p ${{ env.DEPLOY_PORT }} -o StrictHostKeyChecking=yes \
+                -o HostKeyAlgorithms=ssh-ed25519 \
+                -o KexAlgorithms=curve25519-sha256@libssh.org" \
+            deploy-build/ "${DEPLOY_USER}@${{ env.DEPLOY_HOST }}:${{ env.DEPLOY_PATH }}"
 
       - name: Print deployment URL
         if: success()
-        env:
-          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
         run: |
-          echo "Deployment successful: https://home.cit.tum.de/~${DEPLOY_USER}"
+          echo "Deployment successful: https://home.cit.tum.de/~${{ secrets.DEPLOY_USER }}"
