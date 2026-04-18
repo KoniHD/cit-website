@@ -39,7 +39,7 @@ body {
     min-height: 100vh;
 }
 
-header {
+.header-main {
     background: var(--tum-blue);
     padding: 0 2rem;
     height: 52px;
@@ -107,6 +107,62 @@ header {
     height: 36px;
     display: flex;
     align-items: center;
+}
+
+.lang-bar {
+    width: 100%;
+    box-sizing: border-box;
+    background: var(--white);
+    border-bottom: 1px solid var(--divider);
+    padding: 0.45rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+/* Matches .email-profile-btn: TUM blue control, anchored to the right */
+.lang-toggle {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: stretch;
+    gap: 1px;
+    min-height: 36px;
+    overflow: hidden;
+    border: 1px solid var(--tum-blue);
+    border-radius: 2px;
+    background: var(--tum-blue);
+    font-family: var(--sans);
+    font-size: 0.78rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.lang-toggle__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.75rem;
+    padding: 0.45rem 0.85rem;
+    color: var(--white);
+    text-decoration: none;
+    background: var(--tum-blue);
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+a.lang-toggle__btn:hover,
+a.lang-toggle__btn:focus-visible {
+    background: var(--tum-dark);
+    color: var(--white);
+}
+
+.lang-toggle__btn.is-active {
+    background: var(--white);
+    color: var(--tum-blue);
+    cursor: default;
+    font-weight: 600;
 }
 
 .school-bar span {
@@ -200,6 +256,12 @@ header {
     background: var(--tum-dark);
     border-color: var(--tum-dark);
     color: var(--white);
+}
+
+/* German share button: sentence case, not all caps */
+html[lang="de"] .email-profile-btn {
+    text-transform: none;
+    letter-spacing: 0.02em;
 }
 
 .profile-name {

@@ -1,0 +1,12 @@
+{
+  "name": "cit-website-personal",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "validate": "node ./scripts/validate-profile.mjs",
+    "build": "npm run validate && node ./scripts/build-index.mjs --build-dir .deploy-build"
+  },
+  "dependencies": {
+    "yaml": "^2.8.1"
+  }
+}

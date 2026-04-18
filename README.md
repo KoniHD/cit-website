@@ -1,10 +1,14 @@
+# CIT-Website Template
+
 This repo should serve as a template to create a short profile page for CIT students at TUM
 
+Project repository: [https://github.com/KoniHD/cit-website](https://github.com/KoniHD/cit-website)
+
 > **Features:**
+>
 > - Standardized template
 > - Easily add personal information
 > - Automatic deployment from github
-
 
 ## Motivation
 
@@ -13,12 +17,15 @@ That's why this template is meant to make profile publishing easier for CIT stud
 
 # Usage
 
-1. Fill in your personal information in [`'profile.yml'`](profile.yml).
-2. Replace [`'photo.webp'`](photo.webp) with your own image.
-3. Follow the instructions on the [wiki](https://wiki.ito.cit.tum.de/bin/view/CIT/ITO/Docs/Guides/Helpdesk/EigeneHomepage/) to make your site public.
-4. Ensure you set file permission correctly (see [CIT permission tree view](#cit-permission-setup-tree-view))
-5. *Optional:* Add SEO meta tags for site ownership verification to [`'index.html'`](index.html)
-6. *Optional*: Set up [Github Action Workflow](#optional-github-actions-deploy-setup) for automatic deployment
+1. Fill in your personal information in `['profile.yml'](profile.yml)`.
+2. Replace `['photo.webp'](photo.webp)` with your own image.
+3. Validate your profile locally with `npm run validate` (recommended).
+4. Copy the files on lxhalle and follow the instructions on the [wiki](https://wiki.ito.cit.tum.de/bin/view/CIT/ITO/Docs/Guides/Helpdesk/EigeneHomepage/) to make your site public.
+5. Ensure you set file permission correctly (see [CIT permission tree view](#cit-permission-setup-tree-view))
+6. *(Optional)*: Add SEO meta tags for site ownership verification to `['profile.yml'](profile.yml)`
+7. *(Optional)*: Setup [IndexNow notifications](#optional-indexnow-notification) for search engines.
+8. *(Optional)*: Set up [Github Action Workflow](#optional-github-actions-deploy-setup) for automatic deployment
+9. *(Optional)*: Add a [German translations](#optional-german-translation) of your site.
 
 ## CIT Permission Setup (Tree View)
 
@@ -30,6 +37,8 @@ Make sure your files on lxhalle have the following minimum permissions:
 	`-- home_page/                               directory: o+x
 		`-- html-data/                           directory: o+rx
 			|-- index.html                       file: o+r
+			|-- de/                              directory: o+rx
+			|   `-- index.html                  file: o+r
 			|-- profile.yml                      file: o+r
 			|-- photo.webp                       file: o+r
 			|-- robots.txt                       file: o+r
@@ -37,8 +46,6 @@ Make sure your files on lxhalle have the following minimum permissions:
 			|-- site.webmanifest                 file: o+r
 			|-- styles/                          directory: o+rx
 			|   `-- main.css                     file: o+r
-			|-- scripts/                         directory: o+rx
-			|   `-- profile-loader.js            file: o+r
 			`-- icons/                           directory: o+rx
 				`-- favicon/                     directory: o+rx
 					|-- favicon.ico              file: o+r
@@ -47,31 +54,38 @@ Make sure your files on lxhalle have the following minimum permissions:
 					`-- apple-touch-icon.webp    file: o+r
 ```
 
-## *Optional* Set SEO Meta tags
+## *(Optional)* Set SEO Meta tags
 
-In [`'index.html'`](index.html) you can set meta tags to verify site ownership to common search engines:
+Configure verification tokens in `[profile.yml:40](profile.yml#L40)` under `searchEngineVerification`.
+The build script maps these values into `<meta>` tags in both generated pages.
 
-```html
-    <!-- Search engine verification — uncomment each after obtaining your token -->
-    <!-- Google Search Console  → https://search.google.com/search-console -->
-    <!-- <meta name="google-site-verification" content="YOUR_TOKEN" /> -->
-    <!-- Bing Webmaster Tools   → https://www.bing.com/webmasters -->
-    <!-- <meta name="msvalidate.01" content="YOUR_TOKEN" /> -->
-    <!-- Yandex Webmaster       → https://webmaster.yandex.com DOESN'T WORK CURRENTLY-->
-    <!-- <meta name="yandex-verification" content="YOUR_TOKEN" /> -->
-    <!-- Baidu Webmaster        → https://ziyuan.baidu.com/site -->
-    <!-- <meta name="baidu-site-verification" content="YOUR_TOKEN" /> -->
-    <!-- Naver Search Advisor   → https://searchadvisor.naver.com -->
-    <!-- <meta name="naver-site-verification" content="YOUR_TOKEN" /> -->
-    <!-- Seznam Webmaster       → https://search.seznam.cz -->
-    <!-- <meta name="seznam-wmt" content="YOUR_TOKEN" /> -->
-    <!-- Pinterest              → https://developers.pinterest.com/tools/url-debugger -->
-    <!-- <meta name="p:domain_verify" content="YOUR_TOKEN" /> -->
+```yml
+searchEngineVerification:
+  google: "YOUR_TOKEN"
+  bing: "YOUR_TOKEN"
+  yandex: "YOUR_TOKE"
+  baidu: "YOUR_TOKE"
+  naver: "YOUR_TOKEN"
+  seznam: "YOUR_TOKEN"
+  pinterest: "YOUR_TOKEN"
 ```
 
 *Note* that some engines might not work if they only allow top-level verification.
 
-## *Optional* GitHub Actions Deploy Setup
+## *(Optional)* IndexNow Notification
+
+You can notify IndexNow after each successful deployment using `[.github/workflows/indexnow.yml](.github/workflows/indexnow.yml)`.
+
+How it works:
+
+1. Visit [bing.com/indexnow](https://www.bing.com/indexnow/getstarted) and copy the randomly generated IndexNow key.
+2. Paste your key in `[IndexNowKey.txt](IndexNowKey.txt)` at repository root (this file is public by design).
+3. Deploy workflow uploads this file to your site.
+4. IndexNow workflow reads your live `sitemap.xml`, builds a JSON payload, and submits URL updates to `https://api.indexnow.org/indexnow`.
+
+This helps participating engines discover updates faster, but does not guarantee indexing. Read more in the [documentation](https://www.indexnow.org/documentation).
+
+## *(Optional)* GitHub Actions Deploy Setup
 
 ### 1. Create a dedicated deploy key pair
 
@@ -113,8 +127,26 @@ In repo settings on GitHub:
 
 ### 4. Edit deployment workflow to point to your website
 
-At the top in [`'deploy-rsync.yml'`](.github/workflows/deploy-rsync.yml) replay 'CIT-login' with your credentials to point the workflow to your site upon successfull completion.
+At the top in `['deploy-rsync.yml'](.github/workflows/deploy-rsync.yml)` replay 'CIT-login' with your credentials to point the workflow to your site upon successfull completion.
 
+## *(Optional)*: German Translation
+
+The build pipeline can render a bilingual site:
+
+- English at `/`
+- German at `/de/`
+
+Use `translations.de` in `[profile.yml](profile.yml)`. Any missing German field falls back to the English top-level value. The static German page lives in `[de/index.html](de/index.html)` (UI labels); profile data still comes from YAML.
+
+```yml
+translations:
+  de:
+    role: "M.Sc. Student · Computational Science and Engineering"
+    description: "M.Sc.-Student an der TUM School of Computation, Information and Technology."
+    position: "Masterstudent"
+    affiliationTitle: "Tutor · Parallel Programming"
+    bio: "Bio folgt in Kürze."
+```
 
 # Disclaimer
 
@@ -125,7 +157,7 @@ No copyright or trademark infringement is intended.
 
 The colors used in this template were selected based on an unofficial reference [gist](https://gist.github.com/lnksz/51e3566af2df5c7aa678cd4dfc8305f7).
 
-If you are a rights holder and believe any material (including color usage, branding, or other assets) is inappropriate, please contact me directly at[konstantantin.zeck@tum.de] and I will review and remove/adjust the content promptly.
+If you are a rights holder and believe any material (including color usage, branding, or other assets) is inappropriate, please contact me directly at [[konstantantin.zeck@tum.de](mailto:konstantantin.zeck@tum.de)] and I will review and remove/adjust the content promptly.
 
 To the maximum extent permitted by applicable law, this template is provided **"as is"**, without warranties, and I do not accept liability for third-party use, modifications, deployments, outages, data loss, or security incidents arising from use of this repository.
 

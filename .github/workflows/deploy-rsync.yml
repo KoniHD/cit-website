@@ -6,10 +6,13 @@ on:
       - main
     paths:
       - "index.html"
+      - "de/index.html"
+      - "package.json"
       - "profile.yml"
       - "robots.txt"
       - "site.webmanifest"
       - "sitemap.xml"
+      - "IndexNowKey.txt"
       - "photo.webp"
       - "icons/**"
       - "scripts/**"
@@ -30,6 +33,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install build dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Validate profile.yml
+        run: npm run validate
+
       - name: Build deploy artifact from profile.yml
         run: node ./scripts/build-index.mjs --build-dir deploy-build
 
@@ -41,7 +55,7 @@ jobs:
             exit 0
           fi
 
-          sudo apt-get install --yes libimage-exiftool-perl
+          sudo apt-get update && sudo apt-get install --yes libimage-exiftool-perl
 
       - name: Strip image metadata in build artifact
         run: |
@@ -61,7 +75,9 @@ jobs:
           if-no-files-found: error
 
   report-build-status:
-    needs: build
+    needs:
+      - build
+      - deploy
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -75,15 +91,16 @@ jobs:
           echo "| Metric | Status |" >> $GITHUB_STEP_SUMMARY
           echo "| :--- | :--- |" >> $GITHUB_STEP_SUMMARY
           echo "| **Target Host** | ${{ env.DEPLOY_HOST }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Result** | ${{ job.status }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| **URL** | [View Site](https://home.cit.tum.de/~${{ secrets.DEPLOY_USER }}) |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Build Result** | ${{ needs.build.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Deploy Result** | ${{ needs.deploy.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **URL** | [View Site](https://home.cit.tum.de/~${{ vars.DEPLOY_USER }}) |" >> $GITHUB_STEP_SUMMARY
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
     environment:
       name: deployment
-      url: https://home.cit.tum.de/~zeko
+      url: https://home.cit.tum.de/~${{ vars.DEPLOY_USER }}
     env:
       DEPLOY_HOST: lxhalle.in.tum.de
       DEPLOY_PORT: 22
@@ -132,21 +149,21 @@ jobs:
           chmod u=rw,go=r ~/.ssh/known_hosts
 
       - name: Sync files to server
-        env:
-          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
         run: |
 
           # Intentionally do not preserve perms/owner/group so server-side
           # permission settings are not reset on each deployment.
-          # TODO Update KexAlgo once PQC algorithms are supported by the server!
           rsync --recursive --compress --delete-during --times --quiet \
                 --no-perms --no-owner --no-group \
+              --exclude='node_modules/' \
+              --exclude='package.json' \
+              --exclude='package-lock.json' \
+              --exclude='profile.yml' \
             -e "ssh -p ${{ env.DEPLOY_PORT }} -o StrictHostKeyChecking=yes \
-                -o HostKeyAlgorithms=ssh-ed25519 \
-                -o KexAlgorithms=curve25519-sha256@libssh.org" \
-            deploy-build/ "${DEPLOY_USER}@${{ env.DEPLOY_HOST }}:${{ env.DEPLOY_PATH }}"
+                -o HostKeyAlgorithms=ssh-ed25519" \
+            deploy-build/ "${{ vars.DEPLOY_USER }}@${{ env.DEPLOY_HOST }}:${{ env.DEPLOY_PATH }}"
 
       - name: Print deployment URL
         if: success()
         run: |
-          echo "Deployment successful: https://home.cit.tum.de/~${{ secrets.DEPLOY_USER }}"
+          echo "Deployment successful: https://home.cit.tum.de/~${{ vars.DEPLOY_USER }}"
