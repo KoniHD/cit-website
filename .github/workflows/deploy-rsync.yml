@@ -17,6 +17,9 @@ on:
       - "icons/**"
       - "scripts/**"
       - "styles/**"
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 concurrency:

@@ -26,13 +26,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Submit sitemap URLs to IndexNow
-        id: indexnow
-        env:
-          SITEMAP_URL: ${{ env.SITE_BASE_URL }}/sitemap.xml
+      
+      - name: Load IndexNow key
+        id: load_key
+        env:    
           KEY_LOCATION: ${{ env.SITE_BASE_URL }}/IndexNowKey.txt
-          INDEXNOW_ENDPOINT: https://api.indexnow.org/indexnow
         run: |
           set -euo pipefail
 
@@ -46,7 +44,16 @@ jobs:
             echo "IndexNowKey.txt is empty." >&2
             exit 1
           fi
-
+          echo "INDEXNOW_KEY=$INDEXNOW_KEY" >> "$GITHUB_OUTPUT"
+          echo "KEY_LOCATION=$KEY_LOCATION" >> "$GITHUB_OUTPUT"
+      
+      - name: Check for changes
+        id: check_changes
+        env:
+          SITEMAP_URL: ${{ env.SITE_BASE_URL }}/sitemap.xml
+        run: |
+          set -euo pipefail
+          
           SITEMAP_XML="$(curl --fail --silent --show-error "$SITEMAP_URL")"
           URLS="$(printf '%s' "$SITEMAP_XML" | perl -0777 -ne 'while (/<loc>\s*([^<]+)\s*<\/loc>/g) { print "$1\n" }' | sed '/^$/d')"
 
@@ -70,13 +77,24 @@ jobs:
             fi
           done <<< "$URLS"
 
-          URL_LIST_JSON="$(printf '%s\n' "$URLS" | jq -R . | jq -s .)"
+          URL_LIST_JSON="$(printf '%s\n' "$URLS" | jq -Rc '[.,inputs]')"
+          echo "URL_LIST_JSON=$URL_LIST_JSON" >> "$GITHUB_OUTPUT"
+          echo "HOST=$HOST" >> "$GITHUB_OUTPUT"
 
-          if [ -z "${KEY_LOCATION:-}" ]; then
-            PAYLOAD="$(jq -n --arg host "$HOST" --arg key "$INDEXNOW_KEY" --argjson urlList "$URL_LIST_JSON" '{host:$host,key:$key,urlList:$urlList}')"
-          else
-            PAYLOAD="$(jq -n --arg host "$HOST" --arg key "$INDEXNOW_KEY" --arg keyLocation "$KEY_LOCATION" --argjson urlList "$URL_LIST_JSON" '{host:$host,key:$key,keyLocation:$keyLocation,urlList:$urlList}')"
-          fi
+      - name: Submit sitemap URLs to IndexNow
+        id: indexnow
+        env:
+          INDEXNOW_ENDPOINT: https://api.indexnow.org/indexnow
+          HOST: ${{ steps.check_changes.outputs.HOST }}
+          INDEXNOW_KEY: ${{ steps.load_key.outputs.INDEXNOW_KEY }}
+          KEY_LOCATION: ${{ env.SITE_BASE_URL }}/IndexNowKey.txt
+          URL_LIST_JSON: ${{ steps.check_changes.outputs.URL_LIST_JSON }}
+        run: |
+          PAYLOAD="$(jq -n --arg host "$HOST" \
+            --arg key "$INDEXNOW_KEY" \
+            --arg keyLocation "$KEY_LOCATION" \
+            --argjson urlList "$URL_LIST_JSON" \
+            '{host:$host,key:$key,keyLocation:$keyLocation,urlList:$urlList}')"
 
           HTTP_CODE="$(curl --silent --show-error --output /tmp/indexnow-response.txt --write-out '%{http_code}' \
             --request POST \
@@ -90,14 +108,14 @@ jobs:
             exit 1
           fi
 
-          URL_COUNT="$(printf '%s\n' "$URLS" | wc -l | tr -d ' ')"
-          echo "url_count=$URL_COUNT" >> "$GITHUB_OUTPUT"
+          URL_COUNT="$(printf '%s' '${{ steps.check_changes.outputs.URL_LIST_JSON }}' | jq 'length')"
+          echo "URL_COUNT=$URL_COUNT" >> "$GITHUB_OUTPUT"
           echo "Submitted $URL_COUNT URL(s) to IndexNow."
 
       - name: Write workflow summary
         if: success()
         env:
-          URL_COUNT: ${{ steps.indexnow.outputs.url_count }}
+          URL_COUNT: ${{ steps.indexnow.outputs.URL_COUNT }}
         run: |
           echo "### IndexNow Submission" >> "$GITHUB_STEP_SUMMARY"
           echo "- Sitemap: ${{ env.SITE_BASE_URL }}/sitemap.xml" >> "$GITHUB_STEP_SUMMARY"
