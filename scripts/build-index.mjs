@@ -239,10 +239,21 @@ const injectJsonLd = (templatePath) => {
 injectJsonLd(buildIndexPath);
 injectJsonLd(buildIndexDePath);
 
-const robotsContent = `User-agent: *\nSitemap: ${siteUrl}sitemap.xml\n\n# Block AdsBots\nUser-agent: AdsBot-Google\nUser-agent: Google AdsBot\nUser-agent: Google Adsense\nUser-agent: Google Storebot\nUser-agent: Googlebot-News\nUser-agent: Googlebot-Video\nUser-agent: GoogleAgent-Mariner\nUser-agent: GPTBot\nUser-agent: ChatGPT-User\nUser-agent: ClaudeBot\nUser-agent: anthropic-ai\nUser-agent: Perplexity-User\nUser-agent: cohere-ai\nUser-agent: AI2Bot\nUser-agent: Diffbot\nUser-agent: YouBot\nDisallow: /\n\n# https://developers.cloudflare.com/bots/additional-configurations/managed-robots-txt/#content-signals-policy\nContent-Signal: search=yes, ai-train=no, ai-input=yes\n`;
+const robotsRaw = fs.readFileSync(buildRobotsPath, "utf8");
+const robotsContent = robotsRaw.replace(
+    /^Sitemap:.*$/m,
+    `Sitemap: ${siteUrl}sitemap.xml`
+);
+fs.writeFileSync(buildRobotsPath, robotsContent, "utf8");
 
-const sitemapContent = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n  <url>\n    <loc>${siteUrl}</loc>\n    <xhtml:link rel="alternate" hreflang="en" href="${siteUrl}" />\n    <xhtml:link rel="alternate" hreflang="de" href="${deUrl}" />\n    <xhtml:link rel="alternate" hreflang="x-default" href="${siteUrl}" />\n    <lastmod>${today}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>1.0</priority>\n  </url>\n  <url>\n    <loc>${deUrl}</loc>\n    <xhtml:link rel="alternate" hreflang="en" href="${siteUrl}" />\n    <xhtml:link rel="alternate" hreflang="de" href="${deUrl}" />\n    <xhtml:link rel="alternate" hreflang="x-default" href="${siteUrl}" />\n    <lastmod>${today}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.9</priority>\n  </url>\n</urlset>\n`;
-
+const sitemapRaw = fs.readFileSync(buildSitemapPath, "utf8");
+const sitemapContent = sitemapRaw
+    .replace(/(<lastmod>)\d{4}-\d{2}-\d{2}(<\/lastmod>)/g, `$1${today}$2`)
+    .replace(/(<loc>)https?:\/\/[^<]+de\/(<\/loc>)/g, `$1${deUrl}$2`)
+    .replace(/(<loc>)https?:\/\/[^<]+(<\/loc>)/g, `$1${siteUrl}$2`)
+    .replace(/(href=")https?:\/\/[^"]+de\/(")/g, `$1${deUrl}$2`)
+    .replace(/(href=")https?:\/\/[^"]+(")/g, `$1${siteUrl}$2`);
+fs.writeFileSync(buildSitemapPath, sitemapContent, "utf8");
 fs.writeFileSync(buildRobotsPath, robotsContent, "utf8");
 fs.writeFileSync(buildSitemapPath, sitemapContent, "utf8");
 
