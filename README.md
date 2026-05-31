@@ -17,12 +17,12 @@ That's why this template is meant to make profile publishing easier for CIT stud
 
 # Usage
 
-1. Fill in your personal information in `['profile.yml'](profile.yml)`.
-2. Replace `['photo.webp'](photo.webp)` with your own image.
+1. Fill in your personal information in `[profile.yml](/profile.yml)`.
+2. Replace `[photo.webp](/photo.webp)` with your own image.
 3. Validate your profile locally with `npm run validate` (recommended).
-4. Copy the files on lxhalle and follow the instructions on the [wiki](https://wiki.ito.cit.tum.de/bin/view/CIT/ITO/Docs/Guides/Helpdesk/EigeneHomepage/) to make your site public.
-5. Ensure you set file permission correctly (see [CIT permission tree view](#cit-permission-setup-tree-view))
-6. *(Optional)*: Add SEO meta tags for site ownership verification to `['profile.yml'](profile.yml)`
+4. Copy the files to lxhalle and follow the instructions on the [wiki](https://wiki.ito.cit.tum.de/bin/view/CIT/ITO/Docs/Guides/Helpdesk/EigeneHomepage/) to make your site public.
+5. Ensure you set file permissions correctly (see [CIT permission tree view](#cit-permission-setup-tree-view))
+6. *(Optional)*: Add SEO meta tags for site ownership verification to `[profile.yml](/profile.yml)`
 7. *(Optional)*: Setup [IndexNow notifications](#optional-indexnow-notification) for search engines.
 8. *(Optional)*: Set up [Github Action Workflow](#optional-github-actions-deploy-setup) for automatic deployment
 9. *(Optional)*: Add a [German translations](#optional-german-translation) of your site.
@@ -56,15 +56,15 @@ Make sure your files on lxhalle have the following minimum permissions:
 
 ## *(Optional)* Set SEO Meta tags
 
-Configure verification tokens in `[profile.yml:40](profile.yml#L40)` under `searchEngineVerification`.
+Configure verification tokens in `[profile.yml:40](/profile.yml#L40)` under `searchEngineVerification`.
 The build script maps these values into `<meta>` tags in both generated pages.
 
 ```yml
 searchEngineVerification:
   google: "YOUR_TOKEN"
   bing: "YOUR_TOKEN"
-  yandex: "YOUR_TOKE"
-  baidu: "YOUR_TOKE"
+  yandex: "YOUR_TOKEN"
+  baidu: "YOUR_TOKEN"
   naver: "YOUR_TOKEN"
   seznam: "YOUR_TOKEN"
   pinterest: "YOUR_TOKEN"
@@ -74,12 +74,12 @@ searchEngineVerification:
 
 ## *(Optional)* IndexNow Notification
 
-You can notify IndexNow after each successful deployment using `[.github/workflows/indexnow.yml](.github/workflows/indexnow.yml)`.
+You can notify IndexNow after each successful deployment using `[.github/workflows/indexnow.yml](/.github/workflows/indexnow.yml)`.
 
 How it works:
 
 1. Visit [bing.com/indexnow](https://www.bing.com/indexnow/getstarted) and copy the randomly generated IndexNow key.
-2. Paste your key in `[IndexNowKey.txt](IndexNowKey.txt)` at repository root (this file is public by design).
+2. Paste your key in `[IndexNowKey.txt](/IndexNowKey.txt)` at repository root (this file is public by design).
 3. Deploy workflow uploads this file to your site.
 4. IndexNow workflow reads your live `sitemap.xml`, builds a JSON payload, and submits URL updates to `https://api.indexnow.org/indexnow`.
 
@@ -127,7 +127,7 @@ In repo settings on GitHub:
 
 ### 4. Edit deployment workflow to point to your website
 
-At the top in `['deploy-rsync.yml'](.github/workflows/deploy-rsync.yml)` replay 'CIT-login' with your credentials to point the workflow to your site upon successfull completion.
+At the top in `[deploy-rsync.yml](/.github/workflows/deploy-rsync.yml)` replay 'CIT-login' with your credentials to point the workflow to your site upon successfull completion.
 
 ## *(Optional)*: German Translation
 
@@ -136,7 +136,7 @@ The build pipeline can render a bilingual site:
 - English at `/`
 - German at `/de/`
 
-Use `translations.de` in `[profile.yml](profile.yml)`. Any missing German field falls back to the English top-level value. The static German page lives in `[de/index.html](de/index.html)` (UI labels); profile data still comes from YAML.
+Use `translations.de` in `[profile.yml](/profile.yml)`. Any missing German field falls back to the English top-level value. The static German page lives in `[de/index.html](/de/index.html)` (UI labels); profile data still comes from YAML.
 
 ```yml
 translations:
@@ -157,7 +157,7 @@ No copyright or trademark infringement is intended.
 
 The colors used in this template were selected based on an unofficial reference [gist](https://gist.github.com/lnksz/51e3566af2df5c7aa678cd4dfc8305f7).
 
-If you are a rights holder and believe any material (including color usage, branding, or other assets) is inappropriate, please contact me directly at [[konstantantin.zeck@tum.de](mailto:konstantantin.zeck@tum.de)] and I will review and remove/adjust the content promptly.
+If you are a rights holder and believe any material (including color usage, branding, or other assets) is inappropriate, please contact me directly at [[konstantin.zeck@tum.de](mailto:konstantantin.zeck@tum.de)] and I will review and remove/adjust the content promptly.
 
 To the maximum extent permitted by applicable law, this template is provided **"as is"**, without warranties, and I do not accept liability for third-party use, modifications, deployments, outages, data loss, or security incidents arising from use of this repository.
 
