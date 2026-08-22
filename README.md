@@ -23,8 +23,8 @@ That's why this template is meant to make profile publishing easier for CIT stud
 4. Copy the files to lxhalle and follow the instructions on the [wiki](https://wiki.ito.cit.tum.de/bin/view/CIT/ITO/Docs/Guides/Helpdesk/EigeneHomepage/) to make your site public.
 5. Ensure you set file permissions correctly (see [CIT permission tree view](#cit-permission-setup-tree-view))
 6. *(Optional)*: Add SEO meta tags for site ownership verification to [`profile.yml`](/profile.yml)
-7. *(Optional)*: Set up [Github Action Workflow](#optional-github-actions-deploy-setup) for automatic deployment
-8. *(Optional)*: Add a [German translations](#optional-german-translation) of your site.
+7. *(Optional)*: Set up [GitHub Actions workflow](#optional-github-actions-deploy-setup) for automatic deployment
+8. *(Optional)*: Add a [German translation](#optional-german-translation) of your site.
 
 ## CIT Permission Setup (Tree View)
 
