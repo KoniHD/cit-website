@@ -23,9 +23,8 @@ That's why this template is meant to make profile publishing easier for CIT stud
 4. Copy the files to lxhalle and follow the instructions on the [wiki](https://wiki.ito.cit.tum.de/bin/view/CIT/ITO/Docs/Guides/Helpdesk/EigeneHomepage/) to make your site public.
 5. Ensure you set file permissions correctly (see [CIT permission tree view](#cit-permission-setup-tree-view))
 6. *(Optional)*: Add SEO meta tags for site ownership verification to [`profile.yml`](/profile.yml)
-7. *(Optional)*: Setup [IndexNow notifications](#optional-indexnow-notification) for search engines.
-8. *(Optional)*: Set up [Github Action Workflow](#optional-github-actions-deploy-setup) for automatic deployment
-9. *(Optional)*: Add a [German translations](#optional-german-translation) of your site.
+7. *(Optional)*: Set up [Github Action Workflow](#optional-github-actions-deploy-setup) for automatic deployment
+8. *(Optional)*: Add a [German translations](#optional-german-translation) of your site.
 
 ## CIT Permission Setup (Tree View)
 
@@ -71,19 +70,6 @@ searchEngineVerification:
 ```
 
 *Note* that some engines might not work if they only allow top-level verification.
-
-## *(Optional)* IndexNow Notification
-
-You can notify IndexNow after each successful deployment using [`.github/workflows/indexnow.yml`](/.github/workflows/indexnow.yml).
-
-How it works:
-
-1. Visit [bing.com/indexnow](https://www.bing.com/indexnow/getstarted) and copy the randomly generated IndexNow key.
-2. Paste your key in [`IndexNowKey.txt`](/IndexNowKey.txt) at repository root (this file is public by design).
-3. Deploy workflow uploads this file to your site.
-4. IndexNow workflow reads your live `sitemap.xml`, builds a JSON payload, and submits URL updates to `https://api.indexnow.org/indexnow`.
-
-This helps participating engines discover updates faster, but does not guarantee indexing. Read more in the [documentation](https://www.indexnow.org/documentation).
 
 ## *(Optional)* GitHub Actions Deploy Setup
 

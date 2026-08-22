@@ -144,9 +144,9 @@ body {
     justify-content: center;
     min-width: 2.75rem;
     padding: 0.45rem 0.85rem;
-    color: var(--white);
+    color: var(--tum-blue);
     text-decoration: none;
-    background: var(--tum-blue);
+    background: var(--white);
     border: none;
     cursor: pointer;
     transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
@@ -159,8 +159,8 @@ a.lang-toggle__btn:focus-visible {
 }
 
 .lang-toggle__btn.is-active {
-    background: var(--white);
-    color: var(--tum-blue);
+    background: var(--tum-blue);
+    color: var(--white);
     cursor: default;
     font-weight: 600;
 }

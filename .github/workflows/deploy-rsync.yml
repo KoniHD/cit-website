@@ -12,7 +12,6 @@ on:
       - "robots.txt"
       - "site.webmanifest"
       - "sitemap.xml"
-      - "IndexNowKey.txt"
       - "photo.webp"
       - "icons/**"
       - "scripts/**"
